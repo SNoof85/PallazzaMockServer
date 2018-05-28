@@ -1,0 +1,22 @@
+{
+  "name": "pallazzamockserver",
+  "version": "1.0.0",
+  "description": "This is a very simple mock server that simulates the interface of a *HSP 6 PALLAZZA-III 534.08* pellet stove",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/grieger/PallazzaMockServer.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/grieger/PallazzaMockServer/issues"
+  },
+  "homepage": "https://github.com/grieger/PallazzaMockServer#readme",
+  "dependencies": {
+    "winston": "^3.0.0-rc5"
+  }
+}
