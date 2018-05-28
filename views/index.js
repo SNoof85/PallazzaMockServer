@@ -1,13 +1,18 @@
 // Dependencies
-var http = require('http');
-var url = require('url');
-var fs = require('fs');
-var statusGenerator = require('../controller/statusGenerator.js');
-var config = require('../config/config.js');
+const http = require('http');
+const url = require('url');
+const fs = require('fs');
+
+// Imports
+const statusGenerator = require('../controller/statusGenerator.js');
+const config = require('../config/config.js');
+const logger = config.logger;
 
 // Instanitate a simple web server
 http.createServer(function (req, res) {
-    var query = url.parse(req.url, true);
+    const query = url.parse(req.url, true);
+
+    logger.debug('Processing request: ' + String(req.url));
 
     // Process the query
     switch (query.pathname)
@@ -27,7 +32,7 @@ http.createServer(function (req, res) {
                     return res.end("404 Not Found");
                 }
 
-                var page = String(data);
+                let page = String(data);
 
                 // Apply potential configuration changes: port
                 page = page.replace(/4200/g, config.port);
@@ -38,4 +43,8 @@ http.createServer(function (req, res) {
                 return res.end();
             });
     }
+
+    logger.debug('Finished processing request: ' + String(req.url));
 }).listen(config.port);
+
+logger.info("Server started");
