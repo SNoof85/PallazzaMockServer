@@ -9,42 +9,80 @@ const config = require('../config/config.js');
 const logger = config.logger;
 
 // Instanitate a simple web server
-http.createServer(function (req, res) {
-    const query = url.parse(req.url, true);
+http.createServer(function (request, response)
+{
+    const query = url.parse(request.url, true);
+    const { headers } = request;
 
-    logger.debug('Processing request: ' + String(req.url));
+    logger.debug("===================================");
+    logger.debug("Processing " + request.method);
+    logger.debug("URL: " + String(request.url));
+    logger.debug("HEADER: " + JSON.stringify(headers));
 
-    // Process the query
-    switch (query.pathname)
+    if (request.method === "GET")
     {
-        // Return the status of the device if status.cgi is queried
-        case '/status.cgi':
-            res.writeHead(200, {'Content-Type': 'application/json'});
-            res.end(JSON.stringify(statusGenerator.getStatus()));
-            break;
-        // Return a welcome page in every other case
-        default:
-            fs.readFile('./views/index.html', function(err, data)
-            {
-                // Try to read index.html
-                if (err) {
-                    res.writeHead(404, {'Content-Type': 'text/html'});
-                    return res.end("404 Not Found");
-                }
+        // Process the query
+        switch (query.pathname) {
+            // Return the status of the device if status.cgi is queried
+            case '/status.cgi':
+                response.writeHead(200, {'Content-Type': 'application/json'});
+                response.end(JSON.stringify(statusGenerator.getStatus()));
+                break;
+            // Return a welcome page in every other case
+            default:
+                fs.readFile('./views/index.html', function (err, data) {
+                    // Try to read index.html
+                    if (err) {
+                        response.writeHead(404, {'Content-Type': 'text/html'});
+                        return response.end("404 Not Found");
+                    }
 
-                let page = String(data);
+                    let page = String(data);
 
-                // Apply potential configuration changes: port
-                page = page.replace(/4200/g, config.port);
+                    // Apply potential configuration changes: port
+                    page = page.replace(/4200/g, config.port);
 
-                // Return page
-                res.writeHead(200, {'Content-Type': 'text/html'});
-                res.write(page);
-                return res.end();
-            });
+                    // Return page
+                    response.writeHead(200, {'Content-Type': 'text/html'});
+                    response.write(page);
+                    return response.end();
+                });
+        }
+
+        logger.debug('Finished processing request: ' + String(request.url));
     }
+    else if (request.method === "POST")
+    {
+        // Retrieve the body
+        let body = [];
+        request.on('data', (chunk) =>
+        {
+            body.push(chunk);
+        }).on('end', () =>
+        {
+            // Finish collecting body
+            body = Buffer.concat(body).toString();
+            logger.debug("BODY: " + body);
 
-    logger.debug('Finished processing request: ' + String(req.url));
+            // Extract HSPINht
+            logger.debug("H-XS-PIN: " + headers['x-hs-pin']);
+
+            if (statusGenerator.setState(headers['x-hs-pin'], body))
+            {
+                // Secret is valid. Accept body
+                response.writeHead(200, {'Content-Type': 'text/html'});
+                response.write("Success");
+            }
+            else
+            {
+                // Secret is invalid. Decline body
+                response.writeHead(418, {'Content-Type': 'text/html'});
+            }
+
+            logger.debug('Finished processing request: ' + String(request.url));
+            return response.end();
+        });
+    }
 }).listen(config.port);
 
 logger.info("Server started");

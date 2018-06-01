@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/grieger/PallazzaMockServer#readme",
   "dependencies": {
+    "md5": "^2.2.1",
     "winston": "^3.0.0-rc5"
   }
 }
