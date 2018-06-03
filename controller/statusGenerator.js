@@ -2,7 +2,7 @@
 const config = require('../config/config.js');
 const md5 = require('md5');
 const logger = config.logger;
-const pin = "0042";
+const pin = "0000";
 const HPIN = calculateHPIN(pin);
 
 // Exported function
