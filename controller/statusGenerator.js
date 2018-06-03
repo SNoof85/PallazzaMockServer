@@ -2,7 +2,7 @@
 const config = require('../config/config.js');
 const md5 = require('md5');
 const logger = config.logger;
-const pin = "0000";
+const pin = "0042";
 const HPIN = calculateHPIN(pin);
 
 // Exported function
@@ -43,7 +43,9 @@ const zoneEnum = {"none":0, "1":1, "2":2, "3":3, "4":4, "5":5, "6":6, "7":7};
 // Current state of the stove
 let currentMode = modeEnum.off;
 let currentZone = zoneEnum.none;
-let sp_temp = 21;
+let sp_temp = 23;
+let is_temp = 19;
+let temp_step = 0.5;
 let prg = false;
 // Current nonce
 let currentNonce;
@@ -58,6 +60,9 @@ const defaultStatusHeating = {"meta":{"sw_version":"V6.02","hw_version":"KS01","
 // Assembles a message for the current state
 function assembleStatusString() {
     let status;
+
+    // Update internal state
+    updateInternalState();
 
     // Get status message for current mode and zone
     switch (currentMode)
@@ -89,7 +94,9 @@ function assembleStatusString() {
 
     // Set nonce
     status['meta']['nonce'] = currentNonce;
-    // Set temperature
+    // Set current temperature
+    status['is_temp'] = is_temp;
+    // Set desired temperature
     status['sp_temp'] = sp_temp;
     // Set prg
     status['prg'] = prg;
@@ -133,17 +140,39 @@ function updateInternalState()
     switch (currentMode)
     {
         case modeEnum.off:
-            currentMode = modeEnum.start;
+            if (prg === true && is_temp <= (sp_temp - 4))
+            {
+                currentMode = modeEnum.start;
+            }
+            else if (prg === false && is_temp >= (sp_temp - 8))
+            {
+                is_temp -= temp_step;
+            }
             break;
         case modeEnum.start:
             currentMode = modeEnum.heating;
             break;
         case modeEnum.heating:
-            currentMode = modeEnum.off;
+            if (is_temp < sp_temp)
+            {
+                is_temp += temp_step;
+            }
+            else
+            {
+                currentMode = modeEnum.off;
+                prg = false;
+            }
             break;
         default:
             currentMode = modeEnum.off;
     }
+
+    if (prg === false)
+    {
+        currentMode = modeEnum.off;
+        prg = false;
+    }
+
     logger.debug('Updated internal state: mode is ' + currentMode + ', zone is ' + currentZone);
 }
 
